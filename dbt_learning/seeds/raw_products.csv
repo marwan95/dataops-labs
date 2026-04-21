@@ -1,0 +1,36 @@
+product_id,product_name,category,subcategory,cost_price,list_price,currency,launch_date,is_active
+P-001,ProBook 450 G10,Laptops,Business,420.0,699.0,USD,2023-03-01,True
+P-002,ThinkStation P360,Desktops,Workstation,890.0,1499.0,USD,2023-01-15,True
+P-003,MacBook Air M3,Laptops,Consumer,750.0,1199.0,USD,2024-01-10,True
+P-004,ChromeBook Flex 5,Laptops,Education,180.0,349.0,USD,2023-06-01,True
+P-005,Wireless Mouse MX,Peripherals,Input Devices,28.0,59.99,USD,2022-11-01,True
+P-006,Mechanical Keyboard K8,Peripherals,Input Devices,42.0,89.5,USD,2023-02-10,True
+P-007,USB-C Dock Station,Peripherals,Connectivity,55.0,119.0,USD,2023-04-01,True
+P-008,Webcam 4K Pro,Peripherals,Video,35.0,79.99,USD,2023-01-20,True
+P-009,HDMI Cable 2.1 (2m),Peripherals,Cables,4.5,14.99,USD,2022-06-01,True
+P-010,"UltraWide 34"" Curved",Monitors,Professional,280.0,549.0,USD,2023-05-15,True
+P-011,"4K Monitor 27""",Monitors,Professional,190.0,379.0,USD,2023-03-10,True
+P-012,"Portable Monitor 15.6""",Monitors,Portable,95.0,199.0,USD,2023-08-01,True
+P-013,Noise-Cancel Headphones,Audio,Headphones,85.0,199.99,USD,2023-02-01,True
+P-014,Bluetooth Speaker Mini,Audio,Speakers,18.0,39.99,USD,2023-07-01,True
+P-015,Conference Speakerphone,Audio,Conference,120.0,249.0,USD,2023-04-15,True
+P-016,SSD 1TB NVMe,Storage,Internal,42.0,89.99,USD,2023-01-05,True
+P-017,External HDD 2TB,Storage,External,35.0,69.99,USD,2022-10-01,True
+P-018,USB Flash 128GB,Storage,Flash,6.0,14.99,USD,2022-08-01,True
+P-019,Standing Desk Pro,Furniture,Desks,220.0,449.0,USD,2023-06-01,True
+P-020,Ergonomic Chair,Furniture,Chairs,180.0,399.0,USD,2023-01-10,True
+P-021,Monitor Stand Riser,Furniture,Accessories,25.0,54.99,USD,2023-03-01,True
+P-022,Desk Lamp LED,Furniture,Lighting,15.0,34.99,USD,2023-02-15,True
+P-023,Cable Management Kit,Furniture,Accessories,8.0,19.99,USD,2023-05-01,True
+P-024,WiFi 6E Router,Networking,Routers,75.0,159.0,USD,2023-07-15,True
+P-025,Mesh WiFi System (3pk),Networking,Mesh Systems,130.0,279.0,USD,2023-09-01,True
+P-026,Ethernet Cable Cat6 3m,Networking,Cables,3.0,9.99,USD,2022-05-01,True
+P-027,Smart Power Strip,Power,Strips,18.0,39.99,USD,2023-04-01,True
+P-028,Laptop Power Bank 20K,Power,Portable,40.0,89.99,USD,2023-08-10,True
+P-029,UPS 1500VA,Power,UPS,95.0,199.0,USD,2023-02-01,True
+P-030,"Laptop Sleeve 15""",Accessories,Cases,8.0,24.99,USD,2023-01-01,True
+P-031,Screen Protector Kit,Accessories,Protection,3.5,12.99,USD,2023-03-01,True
+P-032,Laptop Backpack Pro,Accessories,Bags,22.0,49.99,USD,2023-05-15,True
+P-033,Arabic Keyboard Cover,Accessories,Protection,2.5,4.9,OMR,2023-06-01,True
+P-034,Oman Flag Mouse Pad,Accessories,Input Devices,1.2,2.5,OMR,2023-07-01,True
+P-035,  Old Keyboard Model  ,Peripherals,Input Devices,-5.0,29.99,USD,2019-01-01,False

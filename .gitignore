@@ -1,0 +1,31 @@
+# Environment
+.env
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# Airflow
+airflow/logs/
+airflow/plugins/
+
+# Docker
+postgres_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# dbt (learning project)
+dbt_learning/target/
+dbt_learning/dbt_packages/
+dbt_learning/logs/
+
+# IDE
+.vscode/
+.idea/
+
+# Mentor-only (answer keys & evaluation — do NOT share with mentees)
+scripts/generate_seeds.py
+assignments_and_evaluation.md

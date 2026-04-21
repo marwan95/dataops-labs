@@ -1,0 +1,19 @@
+# ══════════════════════════════════════════════════════════════
+# dbt-postgres container
+# ══════════════════════════════════════════════════════════════
+FROM python:3.11-slim
+
+# System deps for psycopg2
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        git gcc libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install dbt-postgres (includes dbt-core)
+RUN pip install --no-cache-dir dbt-postgres==1.9.*
+
+# Working directory (will be overridden by volume mount)
+WORKDIR /usr/app/dbt
+
+ENTRYPOINT ["dbt"]
+CMD ["--version"]

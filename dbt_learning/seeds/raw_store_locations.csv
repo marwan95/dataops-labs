@@ -1,0 +1,9 @@
+store_id,store_name,city,country,region,opened_date
+S-01,Muscat Flagship,Muscat,Oman,GCC,2021-03-15
+S-02,Salalah Hub,Salalah,Oman,GCC,2022-01-10
+S-03,Dubai Mall Kiosk,Dubai,UAE,GCC,2021-07-22
+S-04,Riyadh Central,Riyadh,KSA,GCC,2022-06-01
+S-05,London Pop-Up,London,UK,Europe,2023-09-01
+S-06,Online Store,,,Global,2020-01-01
+S-07,Sohar Branch,Sohar,Oman,GCC,2023-04-20
+S-08,Nizwa Express,Nizwa,Oman,GCC,2024-01-05

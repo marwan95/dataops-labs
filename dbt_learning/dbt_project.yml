@@ -1,0 +1,42 @@
+
+# ──────────────────────────────────────────────────────────────
+# dbt_learning — 2-Layer Architecture (STAGE → DEV)
+# ──────────────────────────────────────────────────────────────
+name: 'dbt_learning'
+version: '1.0.0'
+
+profile: 'dbt_learning'
+
+# ── Path configuration ────────────────────────────────────────
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# ── Seeds ─────────────────────────────────────────────────────
+seeds:
+  dbt_learning:
+    +schema: RAW            # seeds land in the RAW schema
+
+# ── Models ────────────────────────────────────────────────────
+# Layer routing:
+#   models/stage/**  →  STAGE schema  (cleansing only)
+#   models/dev/**    →  DEV   schema  (business logic)
+models:
+  dbt_learning:
+
+    # 🟡 STAGE layer — cleansing, casting, standardisation
+    stage:
+      +schema: STAGE
+      +materialized: view
+
+    # 🔵 DEV layer — dimensions, facts, business logic
+    dev:
+      +schema: DEV
+      +materialized: table

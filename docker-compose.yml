@@ -1,0 +1,138 @@
+# ══════════════════════════════════════════════════════════════
+# DataOps Stack — PostgreSQL · Airflow · dbt
+# ══════════════════════════════════════════════════════════════
+# Usage:
+#   docker compose up -d                      → start all services
+#   docker compose run dbt seed               → load seed data
+#   docker compose run dbt run                → run dbt models
+#   docker compose run dbt test               → run dbt tests
+#   docker compose run dbt debug              → test dbt connection
+# ══════════════════════════════════════════════════════════════
+
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.10.5
+  env_file: .env
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-dataops}:${POSTGRES_PASSWORD:-dataops_pass_2024}@postgres:5432/airflow_db
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=}
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./airflow/plugins:/opt/airflow/plugins
+  depends_on:
+    postgres:
+      condition: service_healthy
+  networks:
+    - dataops
+
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: dataops-postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dataops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dataops_pass_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-ecommerce}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dataops} -d ${POSTGRES_DB:-ecommerce}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - dataops
+
+  # ── Airflow — DB Init (runs once then exits) ─────────────
+  airflow-init:
+    <<: *airflow-common
+    container_name: dataops-airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate &&
+        airflow users create \
+          --username admin \
+          --password admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com || true
+    restart: "no"
+
+  # ── Airflow — Webserver ──────────────────────────────────
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: dataops-airflow-webserver
+    command: webserver
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  # ── Airflow — Scheduler ─────────────────────────────────
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: dataops-airflow-scheduler
+    command: scheduler
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $(hostname)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  # ── dbt ──────────────────────────────────────────────────
+  dbt:
+    build:
+      context: .
+      dockerfile: Dockerfile.dbt
+    container_name: dataops-dbt
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+    volumes:
+      - ./dbt_learning:/usr/app/dbt
+    working_dir: /usr/app/dbt
+    entrypoint: ["dbt"]
+    command: ["debug", "--profiles-dir", "."]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - dbt                      # only runs on demand: docker compose run dbt <cmd>
+    networks:
+      - dataops
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  dataops:
+    driver: bridge
