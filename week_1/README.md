@@ -56,6 +56,27 @@ We are using a local PostgreSQL database running in a Docker container. You will
 
 ---
 
+## 🧊 Data Modeling 101: Facts & Dimensions
+
+As you move from the **STAGE** layer (cleansing) to the **DEV** layer (business logic), you will start building a **Star Schema**. 
+
+*   **Dimension Tables (The "What"):** These contain descriptive data about entities (Customers, Products, Stores).
+*   **Fact Tables (The "When/How much"):** These contain transactional data or events (Orders, Items Sold).
+
+### Visualizing the Relationships
+Here is how your staged models work together to create the Fact and Dimension tables:
+
+```mermaid
+erDiagram
+    stg_order_items }|--|| stg_orders : "order_id"
+    stg_order_items }|--|| stg_products : "product_id"
+    stg_orders }|--|| stg_customers : "customer_id"
+    stg_orders }|--|| stg_store_locations : "store_id"
+```
+
+---
+
+
 ## 📖 Lesson Overview
 
 This week, we focus on getting data into our data warehouse and cleaning it up using dbt.
@@ -90,10 +111,22 @@ Create one staging model per seed table in `models/stage/`. You will do basic cl
 
 ### Task 1.4 — Build DEV Fact Model (20 pts)
 Create `models/dev/fct_order_details.sql` that joins staged orders, order items, products, and customers.
+
+**💡 Logic Hints:**
+*   **The Grain**: This table should have one row per item in an order. Use `stg_order_items` as your base table.
+*   **Net Amount**: `quantity * unit_price * (1 - discount_pct / 100.0)`
+*   **Total Amount**: `net_amount` + `shipping_fee` (from `stg_orders`)
+
 **Deliverable:** The `fct_order_details.sql` file producing one row per order line with calculated gross/net/total amounts.
 
 ### Task 1.5 — Build DEV Dimension Model (10 pts)
 Create `models/dev/dim_customers.sql` — a customer dimension aggregating the total number of orders and the total amount spent per customer.
+
+**💡 Logic Hints:**
+*   **Aggregation**: You will need to join `stg_customers` with your new `fct_order_details` model.
+*   **Grouping**: Every descriptive column must be included in the `GROUP BY` clause.
+*   **Metrics**: Calculate `count(order_id)` for `total_orders` and `sum(total_amount)` for `total_spent`.
+
 **Deliverable:** The `dim_customers.sql` file.
 
 Good luck!
