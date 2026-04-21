@@ -64,8 +64,8 @@ Run `dbt seed` to load all 5 CSV files (`raw_customers.csv`, `raw_products.csv`,
 **Deliverable:** Screenshot of `dbt seed` output showing all 5 seeds loaded successfully.
 
 ### Task 1.2 — Define Sources (15 pts)
-Create `models/stage/_sources.yml` that declares all 5 raw tables as dbt sources so dbt can manage them.
-**Deliverable:** The `_sources.yml` file.
+Create `models/stage/sources.yml` that declares all 5 raw tables as dbt sources so dbt can manage them.
+**Deliverable:** The `sources.yml` file.
 
 ### Task 1.3 — Build STAGE Models (40 pts)
 Create one staging model per seed table in `models/stage/`. You will do basic cleaning like trimming text, standardizing cases, and casting data types.
