@@ -9,6 +9,9 @@ on:
 jobs:
   evaluate:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
     
     services:
       postgres:
