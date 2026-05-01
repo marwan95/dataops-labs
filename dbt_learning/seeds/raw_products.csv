@@ -3,7 +3,7 @@ P-001,ProBook 450 G10,Laptops,Business,420.0,699.0,USD,2023-03-01,True
 P-002,ThinkStation P360,Desktops,Workstation,890.0,1499.0,USD,2023-01-15,True
 P-003,MacBook Air M3,Laptops,Consumer,750.0,1199.0,USD,2024-01-10,True
 P-004,ChromeBook Flex 5,Laptops,Education,180.0,349.0,USD,2023-06-01,True
-P-005,Wireless Mouse MX,Peripherals,Input Devices,28.0,59.99,USD,2022-11-01,True
+P-005,Wireless Mouse MX,Peripherals,Input Devices,28.0,69.99,USD,2022-11-01,True
 P-006,Mechanical Keyboard K8,Peripherals,Input Devices,42.0,89.5,USD,2023-02-10,True
 P-007,USB-C Dock Station,Peripherals,Connectivity,55.0,119.0,USD,2023-04-01,True
 P-008,Webcam 4K Pro,Peripherals,Video,35.0,79.99,USD,2023-01-20,True
@@ -11,7 +11,7 @@ P-009,HDMI Cable 2.1 (2m),Peripherals,Cables,4.5,14.99,USD,2022-06-01,True
 P-010,"UltraWide 34"" Curved",Monitors,Professional,280.0,549.0,USD,2023-05-15,True
 P-011,"4K Monitor 27""",Monitors,Professional,190.0,379.0,USD,2023-03-10,True
 P-012,"Portable Monitor 15.6""",Monitors,Portable,95.0,199.0,USD,2023-08-01,True
-P-013,Noise-Cancel Headphones,Audio,Headphones,85.0,199.99,USD,2023-02-01,True
+P-013,Noise-Cancel Headphones,Audio,Headphones,85.0,179.99,USD,2023-02-01,True
 P-014,Bluetooth Speaker Mini,Audio,Speakers,18.0,39.99,USD,2023-07-01,True
 P-015,Conference Speakerphone,Audio,Conference,120.0,249.0,USD,2023-04-15,True
 P-016,SSD 1TB NVMe,Storage,Internal,42.0,89.99,USD,2023-01-05,True
