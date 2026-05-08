@@ -1,11 +1,12 @@
 """
 DataOps Mentorship — Automated Grading Script
 ==============================================
-Grades student dbt submissions for Weeks 1–2.
+Grades student dbt submissions for Weeks 1–3.
 
 Usage:
     python scripts/grade_assignment.py --week 1
     python scripts/grade_assignment.py --week 2
+    python scripts/grade_assignment.py --week 3
 """
 
 import argparse
@@ -279,6 +280,74 @@ def grade_week_2():
 
 
 # ═════════════════════════════════════════════════════════════
+#  WEEK 3 GRADING
+# ═════════════════════════════════════════════════════════════
+
+def grade_week_3():
+    """Grade Week 3: Data Tests."""
+    report = []
+    total = 0
+    max_score = 0
+
+    report.append("# 📊 Week 3 — Grade Report\n")
+    report.append("## Data Tests\n")
+    report.append("| Task | Check | Points | Status |")
+    report.append("| :--- | :--- | :---: | :---: |")
+
+    checks = []
+    tests_dir = os.path.join(DBT_PROJECT_DIR, "tests")
+
+    # ── Task 3.1: schema.yml with generic tests (25 pts) ────
+    schema_path = os.path.join(STAGE_DIR, "schema.yml")
+    checks.append(("3.1", *check_file_exists(schema_path, "schema.yml exists"), 5))
+    checks.append(("3.1", *check_file_contains(schema_path, r"\bunique\b", "unique test defined"), 5))
+    checks.append(("3.1", *check_file_contains(schema_path, r"\bnot_null\b", "not_null test defined"), 5))
+    checks.append(("3.1", *check_file_contains(schema_path, r"accepted_values", "accepted_values test defined"), 5))
+    checks.append(("3.1", *check_file_contains(schema_path, r"relationships", "relationships test defined"), 5))
+
+    # ── Task 3.2: Custom singular tests (35 pts) ────────────
+    singular_tests = [
+        ("test_no_future_orders.sql", 7),
+        ("test_positive_quantities.sql", 7),
+        ("test_valid_discount_range.sql", 7),
+        ("test_positive_shipping.sql", 7),
+        ("test_positive_cost_price.sql", 7),
+    ]
+    for fname, pts in singular_tests:
+        path = os.path.join(tests_dir, fname)
+        checks.append(("3.2", *check_file_exists(path, fname), pts))
+
+    # ── Task 3.3: Quarantine model (25 pts) ─────────────────
+    quarantine_path = os.path.join(DEV_DIR, "quarantine_orders.sql")
+    checks.append(("3.3", *check_file_exists(quarantine_path, "quarantine_orders.sql exists"), 5))
+    checks.append(("3.3", *check_file_contains(
+        quarantine_path, r"failure_reason", "failure_reason column present"), 10))
+    checks.append(("3.3", *check_file_contains(
+        quarantine_path, r"ref\s*\(", "Uses ref() to staged models"), 5))
+    checks.append(("3.3", *check_file_contains(
+        quarantine_path, r"union\s+all|case\s+when", "Multiple failure conditions captured"), 5))
+
+    # ── Task 3.4: Data quality report (15 pts) ──────────────
+    report_path = os.path.join(DOCS_DIR, "data_quality_report.md")
+    checks.append(("3.4", *check_file_exists(report_path, "data_quality_report.md exists"), 5))
+    checks.append(("3.4", *check_word_count(report_path, 150, "At least 150 words"), 5))
+    checks.append(("3.4", *check_file_contains(
+        report_path, r"remediat|recommend|fix|root cause",
+        "Includes remediation recommendations"), 5))
+
+    # ── Build report ────────────────────────────────────────
+    for task, passed, message, points in checks:
+        max_score += points
+        earned = points if passed else 0
+        total += earned
+        status = f"{earned}/{points}"
+        report.append(f"| {task} | {message} | {status} | {'✅' if passed else '❌'} |")
+
+    _append_summary(report, total, max_score)
+    return "\n".join(report)
+
+
+# ═════════════════════════════════════════════════════════════
 #  SHARED
 # ═════════════════════════════════════════════════════════════
 
@@ -306,8 +375,8 @@ def main():
         description="DataOps Mentorship — Assignment Grader"
     )
     parser.add_argument(
-        "--week", type=int, required=True, choices=[1, 2],
-        help="Which week to grade (1 or 2)"
+        "--week", type=int, required=True, choices=[1, 2, 3],
+        help="Which week to grade (1, 2, or 3)"
     )
     args = parser.parse_args()
 
@@ -315,6 +384,8 @@ def main():
         print(grade_week_1())
     elif args.week == 2:
         print(grade_week_2())
+    elif args.week == 3:
+        print(grade_week_3())
 
 
 if __name__ == "__main__":
