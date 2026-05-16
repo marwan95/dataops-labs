@@ -348,6 +348,105 @@ def grade_week_3():
 
 
 # ═════════════════════════════════════════════════════════════
+#  WEEK 4 GRADING
+# ═════════════════════════════════════════════════════════════
+
+def grade_week_4():
+    """Grade Week 4: Macros and Packages."""
+    report = []
+    total = 0
+    max_score = 0
+
+    report.append("# 📊 Week 4 — Grade Report\n")
+    report.append("## Macros and Packages\n")
+    report.append("| Task | Check | Points | Status |")
+    report.append("| :--- | :--- | :---: | :---: |")
+
+    checks = []
+    macros_dir  = os.path.join(DBT_PROJECT_DIR, "macros")
+    packages_path      = os.path.join(DBT_PROJECT_DIR, "packages.yml")
+    fct_path           = os.path.join(DEV_DIR, "fct_order_details.sql")
+    monthly_path       = os.path.join(DEV_DIR, "fct_monthly_revenue.sql")
+    calc_macro_path    = os.path.join(macros_dir, "calculate_revenue.sql")
+    conv_macro_path    = os.path.join(macros_dir, "convert_currency.sql")
+    macros_yml_path    = os.path.join(macros_dir, "macros.yml")
+
+    # ── Task 4.1: Jinja pivot model (15 pts) ────────────────
+    checks.append(("4.1", *check_file_exists(monthly_path, "fct_monthly_revenue.sql exists"), 3))
+    checks.append(("4.1", *check_file_contains(monthly_path, r"\{%[-\s]*set\b", "{% set %} variable used"), 4))
+    checks.append(("4.1", *check_file_contains(monthly_path, r"\{%[-\s]*for\b", "{% for %} loop used"), 4))
+    checks.append(("4.1", *check_file_contains(monthly_path, r"'jan'.*'feb'|jan_revenue|month_name.*_revenue|_revenue.*month_name", "Monthly revenue columns generated"), 4))
+
+    # ── Task 4.2: Currency converter macro (30 pts) ─────────
+    checks.append(("4.2", *check_file_exists(conv_macro_path, "convert_currency.sql exists"), 5))
+    checks.append(("4.2", *check_file_contains(
+        conv_macro_path,
+        r"macro\s+convert_currency\s*\(\s*\w+\s*,\s*\w+\s*,\s*\w+",
+        "Macro accepts 3 parameters"
+    ), 5))
+    checks.append(("4.2", *check_file_contains(conv_macro_path, r"OMR.*2\.60|2\.60.*OMR", "OMR rate defined"), 5))
+    checks.append(("4.2", *check_file_contains(conv_macro_path, r"EUR.*1\.08|1\.08.*EUR", "EUR rate defined"), 5))
+    checks.append(("4.2", *check_file_contains(fct_path, r"convert_currency", "Macro applied in fct_order_details"), 10))
+
+    # ── Task 4.3: Revenue macro (20 pts) ────────────────────
+    checks.append(("4.3", *check_file_exists(calc_macro_path, "calculate_revenue.sql exists"), 5))
+    checks.append(("4.3", *check_file_contains(
+        calc_macro_path,
+        r"quantity.*unit_price|unit_price.*quantity",
+        "Formula uses quantity × unit_price"
+    ), 5))
+    checks.append(("4.3", *check_file_contains(fct_path, r"calculate_revenue", "Macro applied in fct_order_details"), 10))
+
+    # ── Task 4.4: dbt-utils (20 pts) ────────────────────────
+    checks.append(("4.4", *check_file_exists(packages_path, "packages.yml exists"), 5))
+    checks.append(("4.4", *check_file_contains(packages_path, r"dbt.?utils", "dbt-utils package declared"), 5))
+    checks.append(("4.4", *check_file_contains(fct_path, r"generate_surrogate_key", "generate_surrogate_key used"), 5))
+
+    # Check for any second dbt-utils macro across dev models
+    dev_files = [
+        os.path.join(DEV_DIR, f)
+        for f in os.listdir(DEV_DIR) if f.endswith(".sql")
+    ] if os.path.isdir(DEV_DIR) else []
+    second_macro_found = any(
+        file_exists(p) and re.search(
+            r"dbt_utils\.(star|date_spine|get_column_values|pivot|union_relations|safe_cast)",
+            file_exists(p) or "", re.IGNORECASE
+        )
+        for p in dev_files
+    )
+    checks.append(("4.4", (
+        second_macro_found,
+        "✅ Second dbt-utils macro used" if second_macro_found else "❌ Second dbt-utils macro not found"
+    )[0], (
+        "✅ Second dbt-utils macro used" if second_macro_found else "❌ Second dbt-utils macro not found"
+    ), 5))
+
+    # ── Task 4.5: Macro documentation (15 pts) ──────────────
+    checks.append(("4.5", *check_file_exists(macros_yml_path, "macros.yml exists"), 5))
+    checks.append(("4.5", *check_file_contains(
+        macros_yml_path,
+        r"convert_currency",
+        "convert_currency documented"
+    ), 5))
+    checks.append(("4.5", *check_file_contains(
+        macros_yml_path,
+        r"calculate_revenue",
+        "calculate_revenue documented"
+    ), 5))
+
+    # ── Build report ────────────────────────────────────────
+    for task, passed, message, points in checks:
+        max_score += points
+        earned = points if passed else 0
+        total += earned
+        status = f"{earned}/{points}"
+        report.append(f"| {task} | {message} | {status} | {'✅' if passed else '❌'} |")
+
+    _append_summary(report, total, max_score)
+    return "\n".join(report)
+
+
+# ═════════════════════════════════════════════════════════════
 #  SHARED
 # ═════════════════════════════════════════════════════════════
 
@@ -375,8 +474,8 @@ def main():
         description="DataOps Mentorship — Assignment Grader"
     )
     parser.add_argument(
-        "--week", type=int, required=True, choices=[1, 2, 3],
-        help="Which week to grade (1, 2, or 3)"
+        "--week", type=int, required=True, choices=[1, 2, 3, 4],
+        help="Which week to grade (1, 2, 3, or 4)"
     )
     args = parser.parse_args()
 
@@ -386,6 +485,8 @@ def main():
         print(grade_week_2())
     elif args.week == 3:
         print(grade_week_3())
+    elif args.week == 4:
+        print(grade_week_4())
 
 
 if __name__ == "__main__":

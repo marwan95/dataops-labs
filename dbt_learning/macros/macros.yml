@@ -1,0 +1,49 @@
+version: 2
+
+macros:
+  - name: convert_currency
+    description: >
+      Converts a monetary amount from its source currency to a target currency
+      using fixed exchange rates relative to USD (USD=1.00, OMR=2.60, EUR=1.08).
+      Returns the converted amount cast to numeric(12,2).
+    arguments:
+      - name: amount_column
+        type: string
+        description: >
+          The column expression (or alias) containing the monetary value to convert.
+          Example: 'net_amount'
+      - name: currency_column
+        type: string
+        description: >
+          The column expression (or alias) containing the three-letter ISO currency
+          code of the source amount. Supported values: 'USD', 'OMR', 'EUR'.
+          Example: 'currency'
+      - name: target_currency
+        type: string
+        description: >
+          The target ISO currency code to convert into. Defaults to 'USD'.
+          Supported values: 'USD', 'OMR', 'EUR'.
+          Example: 'USD'
+
+  - name: calculate_revenue
+    description: >
+      Calculates net revenue for a single order line item by applying a percentage
+      discount to the gross line value. Returns (quantity * unit_price * (1 - discount_pct / 100))
+      cast to numeric(12,2). Use this macro wherever revenue needs to be computed
+      to ensure a single, consistent formula across all models.
+    arguments:
+      - name: quantity
+        type: string
+        description: >
+          The column expression containing the number of units sold.
+          Example: 'oi.quantity'
+      - name: unit_price
+        type: string
+        description: >
+          The column expression containing the price per unit before discount.
+          Example: 'oi.unit_price'
+      - name: discount_pct
+        type: string
+        description: >
+          The column expression containing the discount percentage (0–100 scale).
+          Example: 'oi.discount_pct'

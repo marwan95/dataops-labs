@@ -23,6 +23,7 @@ customers as (
 
 joined as (
     select
+        {{ dbt_utils.generate_surrogate_key(['oi.order_id', 'oi.order_item_id']) }} as order_detail_sk,
         oi.order_item_id,
         oi.order_id,
         o.order_date,
@@ -39,10 +40,9 @@ joined as (
         oi.unit_price,
         oi.discount_pct,
         o.shipping_fee,
-        (oi.quantity * oi.unit_price)::numeric(12,2)                                   as gross_amount,
-        (oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0))::numeric(12,2)   as net_amount,
-        (oi.quantity * oi.unit_price * (1 - oi.discount_pct / 100.0)
-            + o.shipping_fee)::numeric(12,2)                                            as total_amount
+        p.currency,
+        (oi.quantity * oi.unit_price)::numeric(12,2)                               as gross_amount,
+        {{ calculate_revenue('oi.quantity', 'oi.unit_price', 'oi.discount_pct') }} as net_amount
     from order_items oi
     left join orders   o on oi.order_id   = o.order_id
     left join products p on oi.product_id = p.product_id
@@ -51,6 +51,14 @@ joined as (
     {% if is_incremental() %}
     where o.order_date > (select max(order_date) from {{ this }}) - interval '3 days'
     {% endif %}
+),
+
+with_totals as (
+    select
+        *,
+        (net_amount + shipping_fee)::numeric(12,2)              as total_amount,
+        {{ convert_currency('net_amount', 'currency', 'USD') }} as net_amount_usd
+    from joined
 )
 
-select * from joined
+select * from with_totals
