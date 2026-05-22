@@ -95,11 +95,10 @@ models:
   - name: fct_monthly_revenue
     description: >
       Pivoted monthly revenue table with one row per store and one column per
-      calendar month (jan_revenue … dec_revenue). Covers the target year defined
-      in the Jinja {% set target_year %} variable. Revenue is calculated using the
-      calculate_revenue macro and filtered to completed order line items.
-      Uses dbt_utils.star() to select order columns and a {% for %} loop to
-      generate the 12 monthly CASE WHEN pivot columns.
+      calendar month (jan_revenue through dec_revenue). Covers 2024 as defined
+      by the target_year Jinja variable. Revenue is calculated using the
+      calculate_revenue macro. Uses dbt_utils.star() to select order columns
+      and a Jinja for-loop to generate the 12 monthly CASE WHEN pivot columns.
 
   - name: quarantine_orders
     description: >
