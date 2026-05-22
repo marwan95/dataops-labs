@@ -1,12 +1,14 @@
 """
 DataOps Mentorship — Automated Grading Script
 ==============================================
-Grades student dbt submissions for Weeks 1–3.
+Grades student dbt submissions for Weeks 1–5.
 
 Usage:
     python scripts/grade_assignment.py --week 1
     python scripts/grade_assignment.py --week 2
     python scripts/grade_assignment.py --week 3
+    python scripts/grade_assignment.py --week 4
+    python scripts/grade_assignment.py --week 5
 """
 
 import argparse
@@ -348,6 +350,74 @@ def grade_week_3():
 
 
 # ═════════════════════════════════════════════════════════════
+#  WEEK 5 GRADING
+# ═════════════════════════════════════════════════════════════
+
+def grade_week_5():
+    """Grade Week 5: Hooks, Exposures, and Documentation."""
+    report = []
+    total = 0
+    max_score = 0
+
+    report.append("# 📊 Week 5 — Grade Report\n")
+    report.append("## Hooks, Exposures, and Documentation\n")
+    report.append("| Task | Check | Points | Status |")
+    report.append("| :--- | :--- | :---: | :---: |")
+
+    checks = []
+    fct_path        = os.path.join(DEV_DIR, "fct_order_details.sql")
+    dim_path        = os.path.join(DEV_DIR, "dim_customers.sql")
+    project_path    = os.path.join(DBT_PROJECT_DIR, "dbt_project.yml")
+    exposures_path  = os.path.join(DEV_DIR, "exposures.yml")
+    stage_schema    = os.path.join(STAGE_DIR, "schema.yml")
+    dev_schema      = os.path.join(DEV_DIR, "schema.yml")
+    catalog_path    = os.path.join(DBT_PROJECT_DIR, "target", "catalog.json")
+
+    # ── Task 5.1: Post-hook indexes (25 pts) ────────────────
+    checks.append(("5.1", *check_file_contains(fct_path, r"post_hook", "post_hook in fct_order_details config"), 5))
+    checks.append(("5.1", *check_file_contains(fct_path, r"IF NOT EXISTS", "IF NOT EXISTS in fct indexes"), 5))
+    checks.append(("5.1", *check_file_contains(fct_path, r"idx_fct_order_details_order_date", "order_date index defined"), 5))
+    checks.append(("5.1", *check_file_contains(dim_path, r"post_hook", "post_hook in dim_customers config"), 5))
+    checks.append(("5.1", *check_file_contains(dim_path, r"idx_dim_customers_country", "country index defined"), 5))
+
+    # ── Task 5.2: Project-level GRANT hook (10 pts) ─────────
+    checks.append(("5.2", *check_file_contains(project_path, r"\+post_hook", "+post_hook defined in dbt_project.yml"), 5))
+    checks.append(("5.2", *check_file_contains(project_path, r"GRANT SELECT", "GRANT SELECT hook present"), 5))
+
+    # ── Task 5.3: Exposures (25 pts) ────────────────────────
+    checks.append(("5.3", *check_file_exists(exposures_path, "exposures.yml exists"), 5))
+    checks.append(("5.3", *check_file_contains(exposures_path, r"revenue_dashboard", "revenue_dashboard exposure defined"), 5))
+    checks.append(("5.3", *check_file_contains(exposures_path, r"inventory_report", "inventory_report exposure defined"), 5))
+    checks.append(("5.3", *check_file_contains(exposures_path, r"depends_on", "depends_on lists present"), 5))
+    checks.append(("5.3", *check_file_contains(exposures_path, r"owner:", "Owner information filled in"), 5))
+
+    # ── Task 5.4: Model documentation (25 pts) ──────────────
+    checks.append(("5.4", *check_file_contains(stage_schema, r"description:", "stage/schema.yml has descriptions"), 5))
+    checks.append(("5.4", *check_file_exists(dev_schema, "dev/schema.yml exists"), 5))
+    checks.append(("5.4", *check_file_contains(dev_schema, r"order_detail_sk", "fct_order_details columns documented"), 5))
+    checks.append(("5.4", *check_file_contains(dev_schema, r"net_amount", "net_amount column documented"), 5))
+    checks.append(("5.4", *check_file_contains(dev_schema, r"total_orders", "dim_customers columns documented"), 5))
+
+    # ── Task 5.5: Docs generated (15 pts) ───────────────────
+    catalog_exists = os.path.isfile(os.path.normpath(catalog_path))
+    checks.append(("5.5", catalog_exists,
+        "✅ target/catalog.json exists (dbt docs generate ran)" if catalog_exists
+        else "⏳ target/catalog.json not found — run: docker compose run dbt docs generate --profiles-dir .",
+        15))
+
+    # ── Build report ────────────────────────────────────────
+    for task, passed, message, points in checks:
+        max_score += points
+        earned = points if passed else 0
+        total += earned
+        status = f"{earned}/{points}"
+        report.append(f"| {task} | {message} | {status} | {'✅' if passed else '❌'} |")
+
+    _append_summary(report, total, max_score)
+    return "\n".join(report)
+
+
+# ═════════════════════════════════════════════════════════════
 #  WEEK 4 GRADING
 # ═════════════════════════════════════════════════════════════
 
@@ -474,8 +544,8 @@ def main():
         description="DataOps Mentorship — Assignment Grader"
     )
     parser.add_argument(
-        "--week", type=int, required=True, choices=[1, 2, 3, 4],
-        help="Which week to grade (1, 2, 3, or 4)"
+        "--week", type=int, required=True, choices=[1, 2, 3, 4, 5],
+        help="Which week to grade (1–5)"
     )
     args = parser.parse_args()
 
@@ -487,6 +557,8 @@ def main():
         print(grade_week_3())
     elif args.week == 4:
         print(grade_week_4())
+    elif args.week == 5:
+        print(grade_week_5())
 
 
 if __name__ == "__main__":

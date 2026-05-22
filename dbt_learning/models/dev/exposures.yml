@@ -1,0 +1,32 @@
+version: 2
+
+exposures:
+
+  - name: revenue_dashboard
+    type: dashboard
+    maturity: high
+    description: >
+      Executive-facing revenue dashboard tracking order performance, net revenue,
+      and customer spend across all stores. Refreshed daily via the incremental
+      fct_order_details pipeline. Filters by store, date range, and order status.
+    owner:
+      name: Marwan Al-Hajri
+      email: marwan95alhajri@gmail.com
+    depends_on:
+      - ref('fct_order_details')
+      - ref('dim_customers')
+
+  - name: inventory_report
+    type: analysis
+    maturity: medium
+    description: >
+      Ad-hoc analyst report cross-referencing the product catalogue with order
+      activity to identify slow-moving SKUs, stock gaps, and pricing anomalies.
+      Combines product attributes from stg_products with order volumes from
+      fct_order_details.
+    owner:
+      name: Marwan Al-Hajri
+      email: marwan95alhajri@gmail.com
+    depends_on:
+      - ref('stg_products')
+      - ref('fct_order_details')

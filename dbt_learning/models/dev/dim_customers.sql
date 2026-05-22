@@ -1,3 +1,10 @@
+{{
+    config(
+        materialized='table',
+        post_hook="CREATE INDEX IF NOT EXISTS idx_dim_customers_country ON {{ this }} (country)"
+    )
+}}
+
 with customers as (
     select * from {{ ref('stg_customers') }}
 ),
