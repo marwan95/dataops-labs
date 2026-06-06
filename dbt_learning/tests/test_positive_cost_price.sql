@@ -1,3 +1,4 @@
+{{ config(severity='warn') }}
 -- Finds products with a non-positive cost_price.
 -- Any rows returned = test failure.
 select

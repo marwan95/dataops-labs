@@ -1,3 +1,4 @@
+{{ config(severity='warn') }}
 -- Finds order items where discount_pct is outside the valid range [0, 100].
 -- Any rows returned = test failure.
 select

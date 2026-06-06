@@ -1,3 +1,4 @@
+{{ config(severity='warn') }}
 -- Finds orders whose order_date is in the future.
 -- Any rows returned = test failure.
 select

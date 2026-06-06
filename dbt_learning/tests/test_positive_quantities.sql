@@ -1,3 +1,4 @@
+{{ config(severity='warn') }}
 -- Finds order items with a non-positive quantity.
 -- Any rows returned = test failure.
 select

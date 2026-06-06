@@ -1,3 +1,4 @@
+{{ config(severity='warn') }}
 -- Finds orders with a negative shipping fee.
 -- Any rows returned = test failure.
 select

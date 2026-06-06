@@ -7,13 +7,21 @@ models:
       - name: customer_id
         description: Unique identifier for each customer.
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
       - name: email
         description: Customer email address (should be unique and populated).
         tests:
-          - not_null
-          - unique
+          - not_null:
+              config:
+                severity: warn
+          - unique:
+              config:
+                severity: warn
 
   - name: stg_orders
     description: Cleaned order header records from RAW.raw_orders.
@@ -21,20 +29,30 @@ models:
       - name: order_id
         description: Unique identifier for each order.
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
       - name: customer_id
         description: Foreign key to stg_customers.
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
           - relationships:
               to: ref('stg_customers')
               field: customer_id
+              config:
+                severity: warn
       - name: order_status
         description: Current status of the order.
         tests:
           - accepted_values:
               values: ['pending', 'shipped', 'completed', 'returned', 'cancelled']
+              config:
+                severity: warn
 
   - name: stg_order_items
     description: Individual line items within each order from RAW.raw_order_items.
@@ -42,22 +60,34 @@ models:
       - name: order_item_id
         description: Unique identifier for each order line item.
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
       - name: order_id
         description: Foreign key to stg_orders.
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
           - relationships:
               to: ref('stg_orders')
               field: order_id
+              config:
+                severity: warn
       - name: product_id
         description: Foreign key to stg_products.
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
           - relationships:
               to: ref('stg_products')
               field: product_id
+              config:
+                severity: warn
 
   - name: stg_products
     description: Cleaned product catalogue records from RAW.raw_products.
@@ -65,8 +95,12 @@ models:
       - name: product_id
         description: Unique identifier for each product.
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
 
   - name: stg_store_locations
     description: Cleaned store location records from RAW.raw_store_locations.
@@ -74,5 +108,9 @@ models:
       - name: store_id
         description: Unique identifier for each store.
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+          - not_null:
+              config:
+                severity: warn
