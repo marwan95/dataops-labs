@@ -10,7 +10,9 @@
 # ══════════════════════════════════════════════════════════════
 
 x-airflow-common: &airflow-common
-  image: apache/airflow:2.10.5
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
   env_file: .env
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -18,10 +20,16 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=}
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    POSTGRES_USER: ${POSTGRES_USER:-dataops}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dataops_pass_2024}
+    POSTGRES_DB: ${POSTGRES_DB:-ecommerce}
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
+    - ./dbt_learning:/opt/airflow/dbt
   depends_on:
     postgres:
       condition: service_healthy

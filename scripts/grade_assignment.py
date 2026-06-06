@@ -350,6 +350,102 @@ def grade_week_3():
 
 
 # ═════════════════════════════════════════════════════════════
+#  WEEK 6 GRADING
+# ═════════════════════════════════════════════════════════════
+
+def grade_week_6():
+    """Grade Week 6: Airflow Automation."""
+    import ast
+
+    report = []
+    total = 0
+    max_score = 0
+
+    report.append("# 📊 Week 6 — Grade Report\n")
+    report.append("## Airflow Automation\n")
+    report.append("| Task | Check | Points | Status |")
+    report.append("| :--- | :--- | :---: | :---: |")
+
+    checks = []
+    dags_dir          = os.path.join(os.path.dirname(__file__), "..", "airflow", "dags")
+    dag_path          = os.path.join(dags_dir, "dbt_pipeline.py")
+    overview_path     = os.path.join(DOCS_DIR, "airflow_overview.md")
+    retro_path        = os.path.join(DOCS_DIR, "pipeline_retrospective.md")
+    project_root      = os.path.join(os.path.dirname(__file__), "..")
+    dockerfile_path   = os.path.join(project_root, "Dockerfile.airflow")
+    compose_path      = os.path.join(project_root, "docker-compose.yml")
+
+    # ── Task 6.1: Airflow concepts doc (10 pts) ─────────────
+    checks.append(("6.1", *check_file_exists(overview_path, "airflow_overview.md exists"), 2))
+    checks.append(("6.1", *check_file_contains(overview_path, r"dag|directed acyclic", "DAG concept explained"), 2))
+    checks.append(("6.1", *check_file_contains(overview_path, r"BashOperator.*PythonOperator|PythonOperator.*BashOperator", "BashOperator vs PythonOperator covered"), 2))
+    checks.append(("6.1", *check_file_contains(overview_path, r"schedule_interval|schedule", "schedule_interval explained"), 2))
+    checks.append(("6.1", *check_file_contains(overview_path, r"sensor", "Sensor explained"), 2))
+
+    # ── Task 6.2: Pipeline DAG (45 pts) ─────────────────────
+    checks.append(("6.2", *check_file_exists(dag_path, "dbt_pipeline.py exists"), 5))
+    checks.append(("6.2", *check_file_contains(dag_path, r"BashOperator", "BashOperator used"), 5))
+    checks.append(("6.2", *check_file_contains(dag_path, r"0 6 \* \* \*", "Schedule set to 0 6 * * *"), 5))
+    checks.append(("6.2", *check_file_contains(dag_path, r"catchup\s*=\s*False", "catchup=False set"), 3))
+    checks.append(("6.2", *check_file_contains(dag_path, r"retries.*2|2.*retries", "retries=2 configured"), 3))
+    checks.append(("6.2", *check_file_contains(dag_path, r"retry_delay", "retry_delay configured"), 3))
+    checks.append(("6.2", *check_file_contains(dag_path, r"on_failure_callback", "on_failure_callback in default_args"), 3))
+
+    # Check all 6 task IDs present
+    all_tasks = all(
+        re.search(tid, file_exists(dag_path) or "", re.IGNORECASE)
+        for tid in [r"dbt_seed", r"dbt_test_sources", r"dbt_run_stage",
+                    r"dbt_test_stage", r"dbt_run_dev", r"dbt_test_dev"]
+    )
+    checks.append(("6.2", all_tasks,
+        "✅ All 6 task IDs defined" if all_tasks else "❌ Missing task IDs",
+        8))
+
+    # Check dependency chain
+    checks.append(("6.2", *check_file_contains(dag_path, r">>", "Task dependency chain (>>) defined"), 5))
+
+    # Syntax check — parse the Python file
+    dag_content = file_exists(dag_path)
+    dag_valid = False
+    if dag_content:
+        try:
+            ast.parse(dag_content)
+            dag_valid = True
+        except SyntaxError:
+            dag_valid = False
+    checks.append(("6.2", dag_valid,
+        "✅ DAG file has valid Python syntax" if dag_valid else "❌ DAG file has syntax errors",
+        5))
+
+    # ── Task 6.3: Infrastructure (20 pts) ───────────────────
+    checks.append(("6.3", *check_file_exists(dockerfile_path, "Dockerfile.airflow exists"), 5))
+    checks.append(("6.3", *check_file_contains(dockerfile_path, r"dbt.postgres", "dbt-postgres in Dockerfile.airflow"), 5))
+    checks.append(("6.3", *check_file_contains(compose_path, r"Dockerfile\.airflow", "docker-compose uses Dockerfile.airflow"), 5))
+    checks.append(("6.3", *check_file_contains(compose_path, r"dbt_learning.*opt/airflow/dbt|opt/airflow/dbt.*dbt_learning", "dbt_learning volume mounted in Airflow"), 5))
+
+    # ── Task 6.4: Failure callback (15 pts) ─────────────────
+    checks.append(("6.4", *check_file_contains(dag_path, r"def on_failure_callback", "on_failure_callback function defined"), 5))
+    checks.append(("6.4", *check_file_contains(dag_path, r"context\[.task_instance.\]|context\.get\(.task_instance.\)", "callback accesses task_instance from context"), 5))
+    checks.append(("6.4", *check_file_contains(dag_path, r"on_failure_callback.*:.*on_failure_callback|\"on_failure_callback\"", "callback attached in default_args"), 5))
+
+    # ── Task 6.5: Retrospective (10 pts) ────────────────────
+    checks.append(("6.5", *check_file_exists(retro_path, "pipeline_retrospective.md exists"), 3))
+    checks.append(("6.5", *check_word_count(retro_path, 100, "At least 100 words"), 4))
+    checks.append(("6.5", *check_file_contains(retro_path, r"production|monitoring|improve", "Mentions production/monitoring improvements"), 3))
+
+    # ── Build report ────────────────────────────────────────
+    for task, passed, message, points in checks:
+        max_score += points
+        earned = points if passed else 0
+        total += earned
+        status = f"{earned}/{points}"
+        report.append(f"| {task} | {message} | {status} | {'✅' if passed else '❌'} |")
+
+    _append_summary(report, total, max_score)
+    return "\n".join(report)
+
+
+# ═════════════════════════════════════════════════════════════
 #  WEEK 5 GRADING
 # ═════════════════════════════════════════════════════════════
 
@@ -544,8 +640,8 @@ def main():
         description="DataOps Mentorship — Assignment Grader"
     )
     parser.add_argument(
-        "--week", type=int, required=True, choices=[1, 2, 3, 4, 5],
-        help="Which week to grade (1–5)"
+        "--week", type=int, required=True, choices=[1, 2, 3, 4, 5, 6],
+        help="Which week to grade (1–6)"
     )
     args = parser.parse_args()
 
@@ -559,6 +655,8 @@ def main():
         print(grade_week_4())
     elif args.week == 5:
         print(grade_week_5())
+    elif args.week == 6:
+        print(grade_week_6())
 
 
 if __name__ == "__main__":
