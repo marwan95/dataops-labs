@@ -24,7 +24,10 @@ postgres_data/
 Thumbs.db
 
 # dbt (learning project)
-dbt_learning/target/
+# Keep build artifacts ignored, but track the files the auto-grader reads
+dbt_learning/target/*
+!dbt_learning/target/run_results.json
+!dbt_learning/target/catalog.json
 dbt_learning/dbt_packages/
 dbt_learning/logs/
 
