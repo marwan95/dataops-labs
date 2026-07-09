@@ -44,7 +44,7 @@ with DAG(
 
     dbt_seed = BashOperator(
         task_id="dbt_seed",
-        bash_command=f"{DBT_CMD} seed {DBT_FLAGS}",
+        bash_command=f"cd {DBT_DIR} && dbt seed {DBT_FLAGS}",
     )
 
     dbt_test_sources = BashOperator(
