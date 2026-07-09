@@ -153,3 +153,17 @@ Create `models/dev/dim_customers.sql` — a customer dimension aggregating the t
 **Deliverable:** The `dim_customers.sql` file.
 
 Good luck!
+
+---
+
+## 🤖 Auto-Grade Your Work
+
+Once you've completed all tasks, run the grading script to check your progress:
+
+```bash
+python scripts/grade_assignment.py --week 1
+```
+
+The script will verify that your files exist, contain the correct patterns, and follow the assignment requirements. Fix any ❌ items and re-run until you're satisfied with your score.
+
+Good luck! 🚀

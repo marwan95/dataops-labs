@@ -1,6 +1,6 @@
 # Week 3: Data Tests
 
-Welcome to Week 3 of the DataOps & dbt Mentorship Program! This week, we'll learn how to validate our data automatically so that quality issues are caught before they reach dashboards.
+Welcome to Week 3 of the DataOps & dbt Mentorship Program! This week, we'll learn how to **validate your data** using dbt's built-in testing framework — catching bad data before it reaches dashboards.
 
 ---
 
@@ -8,10 +8,10 @@ Welcome to Week 3 of the DataOps & dbt Mentorship Program! This week, we'll lear
 
 Before starting Week 3, make sure you have completed **all of Week 2**:
 
-- [ ] `fct_order_details.sql` converted to incremental materialization
-- [ ] `snap_products.sql` snapshot created and running
 - [ ] `docs/materializations.md` written
-- [ ] All models run successfully (`dbt run`)
+- [ ] `fct_order_details.sql` converted to incremental model
+- [ ] `snapshots/snap_products.sql` created and working
+- [ ] Snapshot simulation exercise completed
 
 > **If your Week 2 models are not working yet, fix them first.** Week 3 builds directly on top of them.
 
@@ -19,197 +19,382 @@ Before starting Week 3, make sure you have completed **all of Week 2**:
 
 ## 📖 Lesson Overview
 
-### Why Data Testing?
+### Why Test Your Data?
 
-Imagine a dashboard shows revenue doubled overnight — is it real growth or a bug? Without automated tests, you'd spend hours debugging. With dbt tests, you know within minutes.
+Imagine a dashboard shows revenue doubled overnight — is it real growth or a bug? Without tests, you can't tell. **Data tests** are automated checks that validate your data every time dbt runs. They catch issues like:
 
-Data tests answer the question: **"Is my data what I expect it to be?"**
+- Duplicate IDs that inflate counts
+- Missing values that break joins
+- Invalid values (negative prices, future dates)
+- Orphan records that reference non-existent parents
 
 ### Two Types of dbt Tests
 
-**Generic Tests** — pre-built checks you declare in YAML:
+| Type               | Where It Lives       | How It Works                                                              |
+| ------------------ | -------------------- | ------------------------------------------------------------------------- |
+| **Generic Tests**  | `schema.yml` (YAML) | Pre-built checks:`unique`, `not_null`, `accepted_values`, `relationships` |
+| **Singular Tests** | `tests/*.sql`        | Custom SQL queries — if the query returns**any rows**, the test **fails** |
 
-| Test              | What it checks                                      |
-| ----------------- | --------------------------------------------------- |
-| `unique`          | No two rows have the same value in this column      |
-| `not_null`        | No NULL values in this column                       |
-| `accepted_values` | Column only contains values from an allowed list    |
-| `relationships`   | Every value exists as a foreign key in another table |
+### Generic Tests: The Big Four
 
-**Singular Tests** — custom SQL queries you write yourself.  
-The rule is simple: **an empty result = test passes. Any rows returned = test fails.**
+dbt comes with 4 built-in generic tests:
+
+```mermaid
+flowchart LR
+    A["unique"] --> B["No duplicate values<br/>in a column"]
+    C["not_null"] --> D["No NULL values<br/>in a column"]
+    E["accepted_values"] --> F["Column only contains<br/>values from a list"]
+    G["relationships"] --> H["Every value exists<br/>in another table's column"]
+```
+
+**Example in YAML:**
+
+```yaml
+models:
+  - name: stg_orders
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+      - name: order_status
+        tests:
+          - accepted_values:
+              values:
+                ["completed", "pending", "shipped", "returned", "cancelled"]
+```
+
+### Singular Tests: Custom SQL Checks
+
+A singular test is just a SQL `SELECT` query saved in the `tests/` folder. **If the query returns any rows, the test fails.** Think of it as: "find me the bad rows."
+
+**Example:**
 
 ```sql
--- test_no_future_orders.sql
--- If this returns any rows, something is wrong
-select order_id, order_date
+-- tests/test_no_future_orders.sql
+-- This test FAILS if any orders have a date in the future
+
+select *
 from {{ ref('stg_orders') }}
 where order_date > current_date
 ```
 
-### The Quarantine Pattern
+> **Key concept:** The test query should return the _failing_ rows. An empty result = test passes. Any rows returned = test fails.
 
-Instead of just failing tests and stopping the pipeline, a production-grade approach is to **capture bad rows** into a quarantine table with a `failure_reason` column. This way:
+### What is a Quarantine Table?
 
-- The pipeline keeps running with clean data
-- Analysts can investigate bad rows without scanning the full table
-- Root causes can be tracked and resolved over time
+Instead of just failing tests and forgetting about it, we can **capture the bad rows** into a special "quarantine" table. This is a dbt model that SELECTs all rows that violate our business rules, so we can investigate and fix them.
 
 ```mermaid
 flowchart LR
-    A[Raw Data] --> B[Staging Models]
-    B --> C{dbt Tests}
-    C -- Pass --> D[DEV Models / Dashboards]
-    C -- Fail --> E[quarantine_orders]
-    E --> F[Investigation & Fix]
+    A["Raw Data"] --> B["Stage Layer<br/>(cleaned)"]
+    B --> C{"Data Tests"}
+    C -->|Pass| D["DEV Layer<br/>(business logic)"]
+    C -->|Fail| E["Quarantine Table<br/>(bad rows saved)"]
 ```
 
 ---
 
 ## 📝 Assignment Tasks
 
-### Task 3.1 — Generic Tests in schema.yml (25 pts)
+### Task 3.1 — Generic Tests in YAML (30 pts)
 
-Create `models/stage/schema.yml` that defines generic tests across **all 5 staging models**.
+Create a schema file at `models/stage/schema.yml` that defines generic tests for all your staging models.
 
-> ⚠️ **Heads up:** Some tests will intentionally **fail** — the seed data contains planted quality issues. That is expected. Your job is to write the tests and observe the failures.
+**What you need to do:**
 
-**Required tests to include:**
+1. Create the `schema.yml` file
+2. List each staging model under the `models:` key
+3. Add the required tests to the appropriate columns
 
-- `stg_customers`: `customer_id` (unique, not_null), `email` (not_null, unique)
-- `stg_orders`: `order_id` (unique, not_null), `customer_id` (not_null, relationships → stg_customers), `order_status` (accepted_values: pending, shipped, completed, returned, cancelled)
-- `stg_order_items`: `order_item_id` (unique, not_null), `order_id` (relationships → stg_orders), `product_id` (relationships → stg_products)
-- `stg_products`: `product_id` (unique, not_null)
-- `stg_store_locations`: `store_id` (unique, not_null)
+**Required tests per model:**
 
-**Run your tests:**
+| Model                 | Column          | Required Tests                                                                     |
+| --------------------- | --------------- | ---------------------------------------------------------------------------------- |
+| `stg_customers`       | `customer_id`   | `unique`, `not_null`                                                               |
+| `stg_customers`       | `email`         | `not_null`                                                                         |
+| `stg_products`        | `product_id`    | `unique`, `not_null`                                                               |
+| `stg_orders`          | `order_id`      | `unique`, `not_null`                                                               |
+| `stg_orders`          | `customer_id`   | `not_null`                                                                         |
+| `stg_orders`          | `order_status`  | `accepted_values` → `['completed', 'pending', 'shipped', 'returned', 'cancelled']` |
+| `stg_order_items`     | `order_item_id` | `unique`, `not_null`                                                               |
+| `stg_order_items`     | `order_id`      | `relationships` → to `stg_orders`                                                  |
+| `stg_order_items`     | `product_id`    | `relationships` → to `stg_products`                                                |
+| `stg_store_locations` | `store_id`      | `unique`, `not_null`                                                               |
 
-```bash
-dbt test --profiles-dir .
+**💡 Code Hints:**
+
+Here's the general structure of `schema.yml`:
+
+```yaml
+version: 2
+
+models:
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: email
+        tests:
+          - not_null
+
+  - name: stg_products
+    columns:
+      - name: product_id
+        tests:
+          - unique
+          - not_null
+
+  # ... continue for the remaining models
 ```
 
-**Deliverable:** `models/stage/schema.yml` with generic tests on all 5 staging models.
+A `relationships` test checks that every value in a column exists in another table. Here's the syntax:
 
-| Criteria                        | Points |
-| ------------------------------- | ------ |
-| schema.yml file exists          | 5      |
-| `unique` test defined           | 5      |
-| `not_null` test defined         | 5      |
-| `accepted_values` test defined  | 5      |
-| `relationships` test defined    | 5      |
+```yaml
+- name: order_id
+  tests:
+    - relationships:
+        to: ref('stg_orders')
+        field: order_id
+```
+
+An `accepted_values` test checks that a column only contains values from a predefined list:
+
+```yaml
+- name: order_status
+  tests:
+    - accepted_values:
+        values: ["completed", "pending", "shipped", "returned", "cancelled"]
+```
+
+**Testing your work:**
+
+```bash
+# Run all tests
+dbt test --profiles-dir .
+
+# Run tests for a specific model
+dbt test --select stg_orders --profiles-dir .
+```
+
+> **Important:** Some tests **SHOULD fail** — that's intentional! The seed data contains planted quality issues. Your job is to identify which tests fail and understand _why_.
+
+**Deliverable:** `models/stage/schema.yml` and `dbt test` output.
+
+| Criteria                                                    | Points |
+| ----------------------------------------------------------- | ------ |
+| All required generic tests are defined in YAML              | 10     |
+| `dbt test` runs (some tests SHOULD fail — that's the point) | 5      |
+| Student can identify and explain each failure               | 10     |
+| Correct YAML syntax                                         | 5      |
 
 ---
 
 ### Task 3.2 — Custom Singular Tests (35 pts)
 
-Write 5 custom SQL test files in the `tests/` directory. Each query should return the **failing rows**. An empty result means the test passes.
+Write 5 custom SQL tests in the `tests/` directory. Each test should `SELECT` the rows that violate a business rule — if any rows are returned, the test fails.
 
-**Tests to write:**
+**What you need to create:**
 
-| File | What to check |
-| ---- | ------------- |
-| `tests/test_no_future_orders.sql` | Orders where `order_date > current_date` |
-| `tests/test_positive_quantities.sql` | Order items where `quantity <= 0` |
-| `tests/test_valid_discount_range.sql` | Order items where `discount_pct < 0` or `discount_pct > 100` |
-| `tests/test_positive_shipping.sql` | Orders where `shipping_fee < 0` |
-| `tests/test_positive_cost_price.sql` | Products where `cost_price <= 0` |
+| Test File                       | What It Checks                                | Which Table       |
+| ------------------------------- | --------------------------------------------- | ----------------- |
+| `test_no_future_orders.sql`     | No `order_date > current_date`                | `stg_orders`      |
+| `test_positive_quantities.sql`  | No `quantity <= 0`                            | `stg_order_items` |
+| `test_valid_discount_range.sql` | No `discount_pct < 0` or `discount_pct > 100` | `stg_order_items` |
+| `test_positive_shipping.sql`    | No `shipping_fee < 0`                         | `stg_orders`      |
+| `test_positive_cost_price.sql`  | No `cost_price < 0`                           | `stg_products`    |
 
-**💡 Template:**
+**💡 Code Hints:**
+
+Each test file is a standalone SQL query. Use `{{ ref() }}` to reference your staged models (not raw tables):
 
 ```sql
--- test_no_future_orders.sql
-select
-    order_id,
-    customer_id,
-    order_date
+-- tests/test_no_future_orders.sql
+-- Fails if any order has a date in the future
+
+select *
 from {{ ref('stg_orders') }}
 where order_date > current_date
 ```
 
-**Run your tests:**
+```sql
+-- tests/test_positive_quantities.sql
+-- Fails if any order item has zero or negative quantity
 
-```bash
-dbt test --profiles-dir .
+select *
+from {{ ref('stg_order_items') }}
+where quantity <= 0
 ```
 
-**Deliverable:** All 5 SQL files under `tests/`.
+```sql
+-- tests/test_valid_discount_range.sql
+-- Fails if discount is outside the valid 0–100% range
 
-| Criteria                            | Points |
-| ----------------------------------- | ------ |
-| test_no_future_orders.sql exists    | 7      |
-| test_positive_quantities.sql exists | 7      |
-| test_valid_discount_range.sql exists| 7      |
-| test_positive_shipping.sql exists   | 7      |
-| test_positive_cost_price.sql exists | 7      |
+select *
+from {{ ref('stg_order_items') }}
+where discount_pct < 0 or discount_pct > 100
+```
+
+Follow the same pattern for the remaining two tests.
+
+**Testing your work:**
+
+```bash
+# Run all tests (generic + singular)
+dbt test --profiles-dir .
+
+# Run only singular tests
+dbt test --select test_type:singular --profiles-dir .
+```
+
+> **Expect failures!** The seed data has intentional issues — negative prices, future dates, and more. Document what fails and why.
+
+**Deliverable:** All 5 test files in `tests/` + `dbt test` output showing failures.
+
+| Criteria                                              | Points |
+| ----------------------------------------------------- | ------ |
+| All 5 custom tests are created                        | 10     |
+| Tests use `{{ ref() }}` to reference staged models    | 5      |
+| Tests return failing rows correctly (SELECT bad rows) | 10     |
+| Student documents which rows fail and why             | 10     |
 
 ---
 
-### Task 3.3 — Quarantine Model (25 pts)
+### Task 3.3 — Quarantine Table (20 pts)
 
-Create `models/dev/quarantine_orders.sql` — a table that captures all order rows failing quality checks, with a `failure_reason` column explaining why each row was quarantined.
+Create `models/dev/quarantine_orders.sql` — a model that captures all "bad" orders into a single table for investigation.
 
-**What you need to capture:**
+**What you need to do:**
 
-- Orders with a future `order_date`
-- Orders with a NULL `customer_id`
-- Orders referencing a `customer_id` that doesn't exist in `stg_customers`
-- Orders with a negative `shipping_fee`
+1. Create the model file
+2. Use `UNION ALL` to combine all order rows that fail any quality check
+3. Add a `failure_reason` column so you know _why_ each row was flagged
 
-**💡 Pattern using UNION ALL:**
+**💡 Code Hints:**
+
+The quarantine model should filter orders that violate any of these rules:
 
 ```sql
 {{
-    config(materialized='table')
+    config(
+        materialized='table'
+    )
 }}
 
-with orders as (
-    select * from {{ ref('stg_orders') }}
-),
-
-future_orders as (
+with future_dates as (
+    -- Orders with dates in the future
     select *, 'future_order_date' as failure_reason
-    from orders
+    from {{ ref('stg_orders') }}
     where order_date > current_date
 ),
 
--- ... add more CTEs for each failure type
+missing_customer as (
+    -- Orders with no customer assigned
+    select *, 'missing_customer_id' as failure_reason
+    from {{ ref('stg_orders') }}
+    where customer_id is null or trim(customer_id) = ''
+),
 
-select * from future_orders
+negative_shipping as (
+    -- Orders with negative shipping fees
+    select *, 'negative_shipping_fee' as failure_reason
+    from {{ ref('stg_orders') }}
+    where shipping_fee < 0
+),
+
+bad_status as (
+    -- Orders with unrecognized statuses
+    select *, 'invalid_order_status' as failure_reason
+    from {{ ref('stg_orders') }}
+    where order_status not in ('completed', 'pending', 'shipped', 'returned', 'cancelled')
+)
+
+select * from future_dates
 union all
--- ...
+select * from missing_customer
+union all
+select * from negative_shipping
+union all
+select * from bad_status
 ```
 
-**Deliverable:** `models/dev/quarantine_orders.sql`
+> **Key concept:** This is a real-world pattern! In production pipelines, quarantine tables let data engineers investigate issues without blocking the entire pipeline.
 
-| Criteria                            | Points |
-| ----------------------------------- | ------ |
-| File exists                         | 5      |
-| `failure_reason` column present     | 10     |
-| Uses `ref()` to staged models       | 5      |
-| Multiple failure conditions captured| 5      |
+**Testing your work:**
+
+```bash
+# Build the quarantine model
+dbt run --select quarantine_orders --profiles-dir .
+
+# Check how many bad rows were captured
+# (run this in your SQL client)
+SELECT failure_reason, count(*) FROM "DEV"."quarantine_orders" GROUP BY 1;
+```
+
+**Deliverable:** A working `quarantine_orders.sql` model with clear filter logic.
+
+| Criteria                                        | Points |
+| ----------------------------------------------- | ------ |
+| Model captures all known bad orders             | 10     |
+| Clear comments explaining each filter condition | 5      |
+| Model materializes as a table                   | 5      |
 
 ---
 
 ### Task 3.4 — Data Quality Report (15 pts)
 
-Create `docs/data_quality_report.md` documenting the data quality issues you discovered in the seed data.
+Write a short summary document at `docs/data_quality_report.md` listing every data issue you found during testing.
 
-**Your report should include:**
+**What to include:**
 
-1. A list of identified issues (table, column, affected rows)
-2. What test caught each issue
-3. Root cause analysis (what went wrong upstream?)
-4. Recommended remediation for each issue
+For each issue, document:
 
-> **Hint:** There are **14 intentionally planted issues** across the four seed tables. See how many you can find!
+1. **Which table** the issue is in (e.g., `raw_orders`)
+2. **Which row(s)** are affected (e.g., `order_id = 1201`)
+3. **What the issue is** (e.g., "order_date is set to 2099-12-31 — a future date")
+4. **Which test caught it** (e.g., `test_no_future_orders.sql`)
+5. **Your recommended fix** (e.g., "filter out in staging" or "fix upstream in source system")
 
-**Deliverable:** `docs/data_quality_report.md` with at least 150 words.
+**💡 Suggested format:**
 
-| Criteria                               | Points |
-| -------------------------------------- | ------ |
-| File exists                            | 5      |
-| At least 150 words                     | 5      |
-| Includes remediation recommendations  | 5      |
+```markdown
+# Data Quality Report
+
+## Summary
+
+Found X issues across Y tables during Week 3 testing.
+
+## Issues Found
+
+### 1. Future Order Date
+
+- **Table:** raw_orders
+- **Row:** order_id = 1201
+- **Issue:** order_date is 2099-12-31 (future date)
+- **Test:** test_no_future_orders.sql
+- **Recommended Fix:** Filter out in staging layer
+
+### 2. Duplicate Order ID
+
+- **Table:** raw_orders
+- **Row:** order_id = 1050 (appears twice)
+- **Issue:** Duplicate primary key
+- **Test:** unique test on order_id
+- **Recommended Fix:** Deduplicate in staging using ROW_NUMBER()
+
+... continue for all issues found
+```
+
+> **Goal:** You should find **at least 10** data quality issues across all the seed tables. The more you find, the better!
+
+**Deliverable:** `docs/data_quality_report.md`
+
+| Criteria                                                               | Points |
+| ---------------------------------------------------------------------- | ------ |
+| All issues documented (must find at least 10 of the 14 planted issues) | 10     |
+| Reasonable fix recommendations                                         | 5      |
 
 ---
 
@@ -220,20 +405,29 @@ Create `docs/data_quality_report.md` documenting the data quality issues you dis
 ## 🔧 dbt Commands Reference
 
 ```bash
-# Run all tests
+# Run all models
+dbt run --profiles-dir .
+
+# Run a specific model
+dbt run --select quarantine_orders --profiles-dir .
+
+# Run ALL tests (generic + singular)
 dbt test --profiles-dir .
-
-# Run only generic tests
-dbt test --select test_type:generic --profiles-dir .
-
-# Run only singular tests
-dbt test --select test_type:singular --profiles-dir .
 
 # Run tests for a specific model
 dbt test --select stg_orders --profiles-dir .
 
-# Run all models + tests
-dbt build --profiles-dir .
+# Run only singular tests
+dbt test --select test_type:singular --profiles-dir .
+
+# Run only generic (schema) tests
+dbt test --select test_type:generic --profiles-dir .
+
+# Reload seed data
+dbt seed --profiles-dir .
+
+# Check your project compiles
+dbt compile --profiles-dir .
 ```
 
 ---
@@ -245,7 +439,7 @@ dbt_learning/
 ├── models/
 │   ├── stage/
 │   │   ├── sources.yml
-│   │   ├── schema.yml              ← NEW
+│   │   ├── schema.yml                ← NEW (generic tests)
 │   │   ├── stg_customers.sql
 │   │   ├── stg_products.sql
 │   │   ├── stg_orders.sql
@@ -254,16 +448,30 @@ dbt_learning/
 │   └── dev/
 │       ├── fct_order_details.sql
 │       ├── dim_customers.sql
-│       └── quarantine_orders.sql   ← NEW
+│       └── quarantine_orders.sql      ← NEW
+├── snapshots/
+│   └── snap_products.sql
 ├── tests/
-│   ├── test_no_future_orders.sql   ← NEW
-│   ├── test_positive_quantities.sql← NEW
-│   ├── test_valid_discount_range.sql← NEW
-│   ├── test_positive_shipping.sql  ← NEW
-│   └── test_positive_cost_price.sql← NEW
+│   ├── test_no_future_orders.sql      ← NEW
+│   ├── test_positive_quantities.sql   ← NEW
+│   ├── test_valid_discount_range.sql  ← NEW
+│   ├── test_positive_shipping.sql     ← NEW
+│   └── test_positive_cost_price.sql   ← NEW
 └── docs/
     ├── materializations.md
-    └── data_quality_report.md      ← NEW
+    └── data_quality_report.md         ← NEW
 ```
+
+---
+
+## 🤖 Auto-Grade Your Work
+
+Once you've completed all tasks, run the grading script to check your progress:
+
+```bash
+python scripts/grade_assignment.py --week 3
+```
+
+The script will verify that your files exist, contain the correct patterns, and follow the assignment requirements. Fix any ❌ items and re-run until you're satisfied with your score.
 
 Good luck! 🚀

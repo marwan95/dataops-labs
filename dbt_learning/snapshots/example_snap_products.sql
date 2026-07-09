@@ -1,32 +1,38 @@
+-- snapshots/example_snap_products.sql
+-- ──────────────────────────────────────────────────────────────
+-- EXAMPLE: This shows the general pattern for a dbt snapshot.
+-- Your task is to create a REAL snapshot file called snap_products.sql
+-- that tracks price and active-status changes on the products table.
+-- ──────────────────────────────────────────────────────────────
+--
+-- The example below is wrapped in a Jinja comment {# ... #} so dbt ignores it
+-- entirely — otherwise dbt would try to parse this guide as a real snapshot
+-- and fail. Copy the pattern into your own snap_products.sql (without the
+-- comment wrapper and the leading -- markers).
+--
 {#
-  EXAMPLE: This shows the general pattern for a dbt snapshot.
-  Your task (Week 2) is to create a REAL snapshot file called snap_products.sql
-  that tracks price and active-status changes on the products table.
+    {% snapshot your_snapshot_name %}
 
-  A snapshot wraps your query in a special Jinja block:
+        {{
+            config(
+                target_schema='RAW',
+                unique_key='primary_key_column',
+                strategy='check',
+                check_cols=['column_a', 'column_b']
+            )
+        }}
 
-  {% snapshot your_snapshot_name %}
+        select * from {{ source('RAW', 'your_table') }}
 
-  {{
-      config(
-          target_schema='RAW',
-          unique_key='primary_key_column',
-          strategy='check',
-          check_cols=['column_a', 'column_b']
-      )
-  }}
-
-  select * from {{ source('RAW', 'your_table') }}
-
-  {% endsnapshot %}
-
-  STRATEGY OPTIONS:
-    'check'     -> compares specific columns to detect changes
-    'timestamp' -> uses an updated_at column to detect changes
-
-  After running `dbt snapshot`, dbt adds these columns automatically:
-    dbt_scd_id       -> unique ID for each version
-    dbt_updated_at   -> when dbt last checked this row
-    dbt_valid_from   -> when this version became active
-    dbt_valid_to     -> when this version was replaced (null = current)
+    {% endsnapshot %}
 #}
+--
+-- STRATEGY OPTIONS:
+--   'check'     → compares specific columns to detect changes
+--   'timestamp' → uses an updated_at column to detect changes
+--
+-- After running `dbt snapshot`, dbt adds these columns automatically:
+--   dbt_scd_id       → unique ID for each version
+--   dbt_updated_at   → when dbt last checked this row
+--   dbt_valid_from   → when this version became active
+--   dbt_valid_to     → when this version was replaced (null = current)
